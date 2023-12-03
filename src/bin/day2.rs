@@ -14,14 +14,6 @@ fn main() {
     println!("part2: {}", part2(&parsed));
 }
 
-pub fn parse_games(input: &str) -> Vec<String> {
-    let mut result = Vec::new();
-    for line in input.lines() {
-        result.push(line.to_string());
-    }
-    return result;
-}
-
 struct Bag {
     blue: i32,
     green: i32,
@@ -36,7 +28,7 @@ struct Game {
     reds: Vec<i32>,
 }
 
-fn parse_game(input: &str) -> Vec<Game> {
+fn parse_games(input: &str) -> Vec<Game> {
     let re: Regex = Regex::new(r"^Game (\d+): (.+)$").unwrap();
     let mut games = Vec::new();
     for line in input.lines() {
