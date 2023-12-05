@@ -8,7 +8,7 @@ fn main() {
     std::io::stdin()
         .read_to_string(&mut input)
         .expect("Failed to read input");
-    let parsed = parse_game(&input);
+    let parsed = parse_games(&input);
     println!("{}", serde_json::to_string_pretty(&parsed).unwrap());
     println!("part1: {}", part1(&parsed));
     println!("part2: {}", part2(&parsed));
