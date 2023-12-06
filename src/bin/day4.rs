@@ -1,7 +1,10 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::{self, to_vec};
-use std::{collections::HashSet, io::Read};
+use std::{
+    collections::{HashMap, HashSet},
+    io::Read,
+};
 
 fn main() {
     let mut input = String::new();
@@ -12,6 +15,7 @@ fn main() {
 
     // println!("{}", serde_json::to_string_pretty(&cards).unwrap());
     println!("part1: {}", part1(&cards));
+    println!("part2: {}", part2(&cards));
 }
 
 #[derive(Serialize, Deserialize)]
@@ -64,19 +68,50 @@ fn part1(cards: &Vec<Card>) -> i32 {
     let base: i32 = 2;
     for card in cards {
         let common = card.picked.intersection(&card.winners).count();
-        // if common > 1 {}
         if common == 0 {
             continue;
         }
         let value = base.pow(common as u32 - 1);
-        // println!(
-        //     "Card {}: {} - {}",
-        //     card.number,
-        //     common,
-        //     value,
-        //     // serde_json::to_string_pretty(&(int.collect::<Vec<_>>())).unwrap()
-        // );
         result += value;
     }
+    return result;
+}
+
+fn part2(cards: &Vec<Card>) -> i32 {
+    let mut result = 0;
+    let mut card_counts_map = HashMap::new();
+    let mut card_winners_map = HashMap::new();
+    // result += cards.len() as i32;
+    for card in cards {
+        let common = card.picked.intersection(&card.winners).count();
+        card_winners_map.insert(card.number, common as i32);
+        // result += 1 + common as i32;
+        let c = card_counts_map
+            .entry(card.number)
+            .and_modify(|v| *v += 1)
+            .or_insert(1)
+            .clone();
+        // println!(
+        //     "card: {}; copies: {}",
+        //     card.number,
+        //     card_counts_map.get(&card.number).unwrap(),
+        // );
+        let from: i32 = card.number + 1;
+        let until = common as i32 + card.number + 1;
+        for _i in 0..c {
+            for card_number in from..until {
+                let count = card_counts_map
+                    .entry(card_number)
+                    .and_modify(|v| *v += 1)
+                    .or_insert(1);
+                // println!("card_number: {}; {}", card_number, count);
+            }
+        }
+        result += card_counts_map.get(&card.number).unwrap();
+    }
+    // println!(
+    //     "{}",
+    //     serde_json::to_string_pretty(&card_counts_map).unwrap()
+    // );
     return result;
 }
