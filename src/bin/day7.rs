@@ -1,7 +1,7 @@
-use regex::Regex;
+
 use serde::{Deserialize, Serialize};
 use std::cmp::{min, Ordering};
-use std::{io::Read, ops::Range};
+use std::{io::Read};
 
 fn main() {
     let mut input = String::new();

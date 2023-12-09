@@ -1,6 +1,6 @@
-use regex::Regex;
+
 use serde::{Deserialize, Serialize};
-use std::{io::Read, ops::Range};
+use std::{io::Read};
 
 fn main() {
     let mut input = String::new();
@@ -57,7 +57,7 @@ fn parse_lines2(input: &str) -> Race {
 }
 
 fn part1(races: &Vec<Race>) -> i64 {
-    let mut result = 1;
+    let _result = 1;
     let mut distances = Vec::new();
     for race in races {
         let mut ways = 0;
@@ -75,7 +75,7 @@ fn part1(races: &Vec<Race>) -> i64 {
     return distances.iter().product();
 }
 fn part2(race: Race) -> i64 {
-    let mut distances = 0..0;
+    let _distances = 0..0;
     let mut start = 0;
     let mut end = 0;
     for held in 0..race.time {

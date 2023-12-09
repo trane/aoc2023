@@ -1,6 +1,6 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::{self, to_vec};
+
 use std::{
     collections::{HashMap, HashSet},
     io::Read,
@@ -100,7 +100,7 @@ fn part2(cards: &Vec<Card>) -> i32 {
         let until = common as i32 + card.number + 1;
         for _i in 0..c {
             for card_number in from..until {
-                let count = card_counts_map
+                let _count = card_counts_map
                     .entry(card_number)
                     .and_modify(|v| *v += 1)
                     .or_insert(1);

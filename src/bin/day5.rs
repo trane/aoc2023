@@ -44,8 +44,8 @@ fn parse_lines(input: &str) -> (Vec<i64>, Vec<Map>) {
         match map_re.captures(line) {
             Some(captures) => {
                 let name = captures.name("name").unwrap().as_str().to_string();
-                let mut source_range = Vec::new();
-                let mut dest_range = Vec::new();
+                let source_range = Vec::new();
+                let dest_range = Vec::new();
                 results.push(Map {
                     name: name,
                     source_range: source_range,
