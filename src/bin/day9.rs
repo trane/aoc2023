@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use itertools::Itertools;
+
 
 fn main() {
     let mut input = String::new();
@@ -80,8 +80,8 @@ fn part2(reports: &Vec<Vec<i32>>) -> i32 {
 }
 
 fn part2r(reports: &Vec<Vec<i32>>) -> i32 {
-    return reports.iter().fold(0, |result, report| {
-        let analysis = itertools::unfold(vec![report.clone()], |acc| {
+    return reports.iter().fold(0, |_result, report| {
+        let _analysis = itertools::unfold(vec![report.clone()], |acc| {
             let a = acc.last().unwrap().iter().enumerate().fold(
                 Some(vec![]),
                 |mut acc: Option<Vec<i32>>, (pos, next)| {

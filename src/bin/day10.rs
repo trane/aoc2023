@@ -16,7 +16,7 @@ fn main() {
         serde_json::to_string_pretty(&nodes).unwrap()
     );
     let graph = make_graph(&nodes, start);
-    println!("{}", serde_json::to_string_pretty(&graph).unwrap());`
+    println!("{}", serde_json::to_string_pretty(&graph).unwrap());
 
     // println!("part1: {}", part1(&reports));
     // println!("part2: {}", part2r(&reports));
