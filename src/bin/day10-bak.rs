@@ -8,18 +8,18 @@ fn main() {
     std::io::stdin()
         .read_to_string(&mut input)
         .expect("Failed to read input");
-    let (start, nodes) = get_nodes(&input);
+    // let (start, nodes) = get_nodes(&input);
     // println!(
     //     "({}, {}): {}",
     //     start.0,
     //     start.1,
     //     serde_json::to_string_pretty(&nodes).unwrap()
     // );
-    let graph = make_graph(&nodes, start);
+    // let graph = make_graph(&nodes, start);
     // println!("{}", serde_json::to_string_pretty(&graph).unwrap());
 
     // println!("part1: {}", part1(&graph));
-    println!("part2: {}", part2(&input, &graph));
+    println!("part2: {}", part2(&input));
 }
 
 #[derive(Serialize, Deserialize)]
@@ -64,7 +64,7 @@ fn parse_lines(input: &str) -> Input {
 }
 
 fn part2(iput: &str, graph: &Graph) -> i32 {
-    let chars = iput
+    let mut chars = iput
         .lines()
         .map(|line| line.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
@@ -73,52 +73,43 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
         .iter()
         .map(|node| node.location)
         .collect::<HashSet<(usize, usize)>>();
-    let mut new_chars: Vec<Vec<char>> = chars
-        .clone()
-        .iter()
-        .enumerate()
-        .map(|(y, line)| {
-            return line
-                .clone()
-                .iter()
-                .enumerate()
-                .map(|(x, c)| {
-                    if locations.contains(&(x, y)) {
-                        return 'B';
-                    }
-                    if y == 0 || y == chars.len() - 1 {
-                        return 'O';
-                    }
-                    if x == 0 || x == line.len() - 1 {
-                        return 'O';
-                    }
-                    return *c;
-                })
-                .collect::<Vec<char>>();
-        })
-        .collect();
-    print_table(&new_chars);
+    let mut enclosed: Vec<Vec<char>> = Vec::new();
+    let mut new_chars: Vec<Vec<char>> = chars.clone();
     loop {
         let mut changed = false;
         for (y, line) in new_chars.clone().iter().enumerate() {
-            if y == 0 || y == new_chars.len() - 1 {
-                changed = true;
-                continue;
-            }
             for (x, c) in line.iter().enumerate() {
-                if x == 0 || x == line.len() - 1 {
-                    changed = true;
-                    continue;
-                }
                 if locations.contains(&(x, y)) {
+                    continue;
+                }
+                let mut peek = if y > 0 { new_chars[y - 1][x] } else { 'O' };
+                if peek == 'O' {
+                    new_chars[y][x] = 'O';
                     changed = true;
                     continue;
                 }
-                if new_chars[y - 1][x] == 'O'
-                    || new_chars[y + 1][x] == 'O'
-                    || new_chars[y][x - 1] == 'O'
-                    || new_chars[y][x + 1] == 'O'
-                {
+                peek = if y < new_chars.len() - 1 {
+                    new_chars[y + 1][x]
+                } else {
+                    'O'
+                };
+                if peek == 'O' {
+                    new_chars[y][x] = 'O';
+                    changed = true;
+                    continue;
+                }
+                peek = if x < new_chars[0].len() - 1 {
+                    new_chars[y][x + 1]
+                } else {
+                    'O'
+                };
+                if peek == 'O' {
+                    new_chars[y][x] = 'O';
+                    changed = true;
+                    continue;
+                }
+                peek = if x > 0 { new_chars[y][x - 1] } else { 'O' };
+                if peek == 'O' {
                     new_chars[y][x] = 'O';
                     changed = true;
                     continue;
@@ -128,8 +119,8 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
         if !changed {
             break;
         }
-        print_table(&new_chars)
     }
+    print_table(&new_chars);
     let mut result = 0;
     for line in new_chars.iter() {
         for c in line.iter() {

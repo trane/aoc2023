@@ -101,23 +101,20 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
     loop {
         let mut changed = false;
         for (y, line) in new_chars.clone().iter().enumerate() {
-            if y == 0 || y == new_chars.len() - 1 {
-                changed = true;
-                continue;
-            }
-            for (x, c) in line.iter().enumerate() {
-                if x == 0 || x == line.len() - 1 {
-                    changed = true;
-                    continue;
-                }
+            // if y == 0 || y == new_chars.len() - 1 {
+            //     continue;
+            // }
+            for (x, _) in line.iter().enumerate() {
+                // if x == 0 || x == line.len() - 1 {
+                //     continue;
+                // }
                 if locations.contains(&(x, y)) {
-                    changed = true;
                     continue;
                 }
-                if new_chars[y - 1][x] == 'O'
-                    || new_chars[y + 1][x] == 'O'
-                    || new_chars[y][x - 1] == 'O'
-                    || new_chars[y][x + 1] == 'O'
+                if (y > 0 && new_chars[y - 1][x] == 'O')
+                    || (y < new_chars.len() - 1 && new_chars[y + 1][x] == 'O')
+                    || (x > 0 && new_chars[y][x - 1] == 'O')
+                    || (x < line.len() - 1 && new_chars[y][x + 1] == 'O')
                 {
                     new_chars[y][x] = 'O';
                     changed = true;
@@ -128,7 +125,7 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
         if !changed {
             break;
         }
-        print_table(&new_chars)
+        print_table(&new_chars);
     }
     let mut result = 0;
     for line in new_chars.iter() {
