@@ -1,3 +1,4 @@
+use core::panic;
 use std::{collections::HashSet, io::Read};
 
 use colored::Colorize;
@@ -15,11 +16,14 @@ fn main() {
     //     start.1,
     //     serde_json::to_string_pretty(&nodes).unwrap()
     // );
-    let graph = make_graph(&nodes, start);
+    let _graph = make_graph(&nodes, start);
+    // let graph = clean_graph(&_graph, start);
     // println!("{}", serde_json::to_string_pretty(&graph).unwrap());
 
     // println!("part1: {}", part1(&graph));
-    println!("part2: {}", part2(&input, &graph));
+    // println!("part2: {}", part2(&input, &_graph));
+    // println!("part2a: {}", part2a(&input));
+    println!("part2b: {}", part2b(&input, &_graph));
 }
 
 #[derive(Serialize, Deserialize)]
@@ -62,6 +66,70 @@ fn parse_lines(input: &str) -> Input {
         y: start.1,
     };
 }
+fn parse_lines2(input: &str) -> Input {
+    let mut start = (0, 0);
+    return Input {
+        chars: input
+            .lines()
+            .enumerate()
+            .map(|(y, line)| {
+                line.chars()
+                    .enumerate()
+                    .map(|(x, c)| {
+                        if c == 'S' {
+                            start = (x, y);
+                        }
+                        return c;
+                    })
+                    .collect::<Vec<char>>()
+            })
+            .collect::<Vec<Vec<char>>>(),
+        x: start.0,
+        y: start.1,
+    };
+}
+
+fn part2b(input: &str, graph: &Graph) -> i32 {
+    let locations = graph
+        .nodes
+        .iter()
+        .map(|node| node.location)
+        .collect::<HashSet<(usize, usize)>>();
+    let chars = input
+        .lines()
+        .enumerate()
+        .map(|(y, line)| {
+            line.chars()
+                .enumerate()
+                .map(|(x, c)| {
+                    if locations.contains(&(x, y)) {
+                        return match c {
+                            '|' | 'F' | '7' => '!',
+                            _ => '_',
+                        };
+                    }
+                    return '.';
+                })
+                .collect::<Vec<char>>()
+        })
+        .collect::<Vec<Vec<char>>>();
+    print_table(&chars);
+    let mut inside = false;
+    let mut result = 0;
+    for (y, line) in chars.iter().enumerate() {
+        inside = false;
+        for (x, c) in line.iter().enumerate() {
+            if *c == '.' && inside {
+                println!("({}, {})", y, x);
+                result += 1;
+            }
+            if *c == '!' {
+                inside = !inside;
+            }
+        }
+    }
+    return result;
+}
 
 fn part2(iput: &str, graph: &Graph) -> i32 {
     let chars = iput
@@ -92,26 +160,21 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
                     if x == 0 || x == line.len() - 1 {
                         return 'O';
                     }
-                    return *c;
+                    if *c != '.' {
+                        return '*';
+                    }
+                    return '.';
                 })
                 .collect::<Vec<char>>();
         })
         .collect();
     print_table(&new_chars);
+    println!("");
     loop {
         let mut changed = false;
         for (y, line) in new_chars.clone().iter().enumerate() {
-            if y == 0 || y == new_chars.len() - 1 {
-                changed = true;
-                continue;
-            }
             for (x, c) in line.iter().enumerate() {
-                if x == 0 || x == line.len() - 1 {
-                    changed = true;
-                    continue;
-                }
-                if locations.contains(&(x, y)) {
-                    changed = true;
+                if new_chars[y][x] != '.' {
                     continue;
                 }
                 if new_chars[y - 1][x] == 'O'
@@ -128,7 +191,6 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
         if !changed {
             break;
         }
-        print_table(&new_chars)
     }
     let mut result = 0;
     for line in new_chars.iter() {
@@ -138,6 +200,7 @@ fn part2(iput: &str, graph: &Graph) -> i32 {
             }
         }
     }
+    print_table(&new_chars);
     return result;
 }
 
@@ -165,9 +228,6 @@ fn get_nodes(input: &str) -> ((usize, usize), Vec<Vec<Node>>) {
     for (y, line) in inpt.chars.iter().enumerate() {
         nodes.push(Vec::new());
         for (x, c) in line.iter().enumerate() {
-            if *c == 'S' {
-                start = (x, y);
-            }
             let value = c.clone();
             let location = (x, y);
             let mut connections = Vec::new();
@@ -194,6 +254,9 @@ fn get_nodes(input: &str) -> ((usize, usize), Vec<Vec<Node>>) {
                 if is_connected(c.clone(), peek, 'e') {
                     connections.push((x + 1, y));
                 }
+            }
+            if *c == 'S' {
+                start = (x, y);
             }
             nodes[y].push(Node {
                 value,
@@ -250,7 +313,7 @@ fn make_graph(nodes: &Vec<Vec<Node>>, start: (usize, usize)) -> Graph {
             continue;
         }
         visited.insert(curr);
-        if nodes[curr.1][curr.0].connections.len() > 0 {
+        if nodes[curr.1][curr.0].connections.len() == 2 {
             for connection in nodes[curr.1][curr.0].connections.clone() {
                 queue.push((connection.0, connection.1));
             }
@@ -264,6 +327,67 @@ fn make_graph(nodes: &Vec<Vec<Node>>, start: (usize, usize)) -> Graph {
     return graph;
 }
 
+fn clean_graph(graph: &Graph, start: (usize, usize), next: (usize, usize)) -> bool {
+    let mut visited: HashSet<(usize, usize)> = HashSet::new();
+    let mut queue: Vec<(usize, usize)> = Vec::new();
+    queue.push(start);
+    while queue.len() > 0 {
+        let curr = queue.pop().unwrap();
+        if visited.contains(&curr) {
+            continue;
+        }
+        visited.insert(curr);
+        if curr == next {
+            return true;
+        }
+        let node = graph.nodes.iter().find(|n| n.location == curr).unwrap();
+        if node.connections.len() > 0 {
+            for connection in node.connections.clone() {
+                queue.push((connection.0, connection.1));
+            }
+        }
+    }
+    return false;
+}
+
+// fn _clean_graph(
+//     graph: &Graph,
+//     visited: &HashSet<(usize, usize)>,
+//     start: (usize, usize),
+//     end: (usize, usize),
+// ) -> HashSet<(usize, usize)> {
+//     for
+// }
+// fn clean_graph(graph: &Graph, start: (usize, usize)) -> Vec<(usize, usize)> {
+//     let mut visited: HashSet<(usize, usize)> = HashSet::new();
+//     for node in graph.nodes.iter() {
+//         for next in node.connections.iter() {
+//             if *next == start {
+//                 break;
+//             }
+//             clean_graph(graph, *next);
+//         }
+//     }
+//     queue.push(start);
+//     while queue.len() > 0 {
+//         let curr = queue.pop().unwrap();
+//         if visited.contains(&curr) {
+//             continue;
+//         }
+//         visited.insert(curr);
+//         if graph.nodes[curr.1][curr.0].connections.len() > 0 {
+//             for connection in graph.nodes[curr.1][curr.0].connections.clone() {
+//                 queue.push((connection.0, connection.1));
+//             }
+//             new_graph.nodes.push(Node {
+//                 value: graph.nodes[curr.1][curr.0].value,
+//                 location: curr,
+//                 connections: graph.nodes[curr.1][curr.0].connections.clone(),
+//             });
+//         }
+//     }
+//     return new_graph;
+// }
 fn part1(graph: &Graph) -> usize {
     let result = if graph.nodes.len() % 2 == 0 {
         graph.nodes.len() / 2
@@ -278,4 +402,113 @@ fn part1(graph: &Graph) -> usize {
         );
     }
     return result;
+}
+
+fn direction(char: char) -> (i32, i32) {
+    match char {
+        'S' => (0, -1),
+        's' => (0, 1),
+        'e' => (1, 0),
+        'w' => (-1, 0),
+        _ => (0, 0),
+    }
+}
+
+fn set_start_direction(start: (usize, usize), chars: &Vec<Vec<char>>) -> (char, (usize, usize)) {
+    let mut start = start;
+    let n = chars[start.1 - 1][start.0];
+    let s = chars[start.1 + 1][start.0];
+    let w = chars[start.1][start.0 - 1];
+    let e = chars[start.1][start.0 + 1];
+    match n {
+        '|' | 'F' | '7' => {
+            return ('n', (start.0, start.1 - 1));
+        }
+        _ => {}
+    }
+    match s {
+        '|' | 'J' | 'L' => {
+            return ('s', (start.0, start.1 + 1));
+        }
+        _ => {}
+    }
+    match w {
+        '-' | 'F' | 'L' => {
+            return ('w', (start.0 - 1, start.1));
+        }
+        _ => {}
+    }
+    match e {
+        '-' | 'J' | '7' => {
+            return ('e', (start.0 + 1, start.1));
+        }
+        _ => {}
+    }
+    panic!("uh oh");
+}
+
+fn part2a(input: &str) -> i32 {
+    let inpt = parse_lines(input);
+    let mut chars = inpt.chars.clone();
+    let mut start = (inpt.x, inpt.y);
+    let mut visited: HashSet<(usize, usize)> = HashSet::new();
+    chars[start.1][start.0] = '*';
+    let (mut heading, mut next) = set_start_direction(start, &chars);
+    println!("start: {:?}, heading: {}", start, heading);
+    loop {
+        start = next.clone();
+        let char = chars[next.1][next.0].clone();
+        if char == '*' {
+            break;
+        }
+        match (heading, char) {
+            ('n', '|') => {
+                next.1 -= 1;
+            }
+            ('n', 'F') => {
+                next.0 += 1;
+                heading = 'e';
+            }
+            ('n', '7') => {
+                next.0 -= 1;
+                heading = 'w';
+            }
+            ('s', '|') => {
+                next.1 += 1;
+            }
+            ('s', 'J') => {
+                next.0 -= 1;
+                heading = 'w';
+            }
+            ('s', 'L') => {
+                next.0 += 1;
+                heading = 'e';
+            }
+            ('w', '-') => {
+                next.0 -= 1;
+            }
+            ('w', 'F') => {
+                next.1 += 1;
+                heading = 's';
+            }
+            ('w', 'L') => {
+                next.1 -= 1;
+                heading = 'n';
+            }
+            ('e', '-') => {
+                next.0 += 1;
+            }
+            ('e', 'J') => {
+                next.1 -= 1;
+                heading = 'n';
+            }
+            ('e', '7') => {
+                next.1 += 1;
+                heading = 's';
+            }
+            _ => {}
+        }
+    }
+    print_table(&chars);
+    return -1;
 }
