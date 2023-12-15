@@ -15,15 +15,20 @@ fn main() {
     std::io::stdin()
         .read_to_string(&mut input)
         .expect("Failed to read input");
-    let parsed = parse_input(&input);
-    for factor in vec![1, 10, 100] {
-        let universe = expand_universe(&parsed, factor);
+    let universe = parse_input(&input);
+    // for factor in vec![1, 10, 100, 100_000_000] {
+    for factor in vec![1_000_000] {
+        // let old_universe = expand_universe(&universe, factor);
+        // let old_galaxy_pairs = galaxy_pairs(&old_universe);
         // print_table(&universe);
-        let galaxy_pairs = galaxy_pairs(&universe);
+        // let galaxy_pairs = galaxy_pairs(&universe);
+        let (columns, rows) = expansion_areas(&universe);
+        let galaxy_pairs = expanded_galaxy_pairs(&universe, columns, rows, factor);
+        // print_pairs(&old_galaxy_pairs);
         // print_pairs(&galaxy_pairs);
         let distances = shortest_distances(&galaxy_pairs);
         // print_distances(&distances);
-        println!("part1: {}", part1(&distances) / 2);
+        println!("part1: {}", part1(&distances));
     }
 }
 
@@ -36,8 +41,8 @@ fn parse_input(input: &str) -> Vec<Vec<char>> {
 }
 
 fn expansion_areas(universe: &Vec<Vec<char>>) -> (Vec<usize>, Vec<usize>) {
-    let mut columns = Vec::new();
-    let mut rows = Vec::new();
+    let mut columns = vec![usize::MAX];
+    let mut rows = vec![usize::MAX];
 
     for col in 0..universe[0].len() {
         let mut is_empty = true;
@@ -64,7 +69,6 @@ fn expansion_areas(universe: &Vec<Vec<char>>) -> (Vec<usize>, Vec<usize>) {
             rows.push(row);
         }
     }
-
     return (columns, rows);
 }
 
@@ -137,28 +141,25 @@ fn expanded_galaxy_pairs(
     for (row, line) in universe.iter().enumerate() {
         for (col, c) in line.iter().enumerate() {
             if *c == '#' {
-                let e_row = rows.iter().find_position(|r| row > **r);
-                let e_col = columns.iter().find_position(|c| col > **c);
-                match (e_row, e_col) {
-                    (Some(r), Some(c)) => {
-                        result.push((row + r.0 * factor, col + c.0 * factor));
-                    }
-                    (None, Some(c)) => {
-                        result.push((row, col + c.0 * factor));
-                    }
-                    (Some(r), None) => {
-                        result.push((row + r.0 * factor, col));
-                    }
-                    (None, None) => {
-                        result.push((row, col));
-                    }
-                }
+                let row_offset = rows
+                    .iter()
+                    .fold(0, |acc, r| if row >= *r { acc + 1 } else { acc })
+                    * (if factor == 1 { 1 } else { factor - 1 })
+                    + factor;
+
+                let col_offset = columns
+                    .iter()
+                    .fold(0, |acc, c| if col >= *c { acc + 1 } else { acc })
+                    * (if factor == 1 { 1 } else { factor - 1 })
+                    + factor;
+                result.push((row + row_offset, col + col_offset));
             }
         }
     }
     return result;
 }
 
+// 63072008425490-630720
 fn print_table(table: &Vec<Vec<char>>) {
     for line in table.iter() {
         for c in line.iter() {
@@ -176,10 +177,18 @@ fn print_pairs(pairs: &Vec<Pair>) {
 }
 
 fn print_distances(distances: &HashMap<Pair, HashMap<Pair, Distance>>) {
-    for (pair, distance) in distances.iter() {
-        print!("{:?}: ", pair);
-        for (neighbor, distance) in distance.iter() {
-            print!("{:?}: {}, ", neighbor, distance);
+    for (x, (pair, distance)) in distances
+        .iter()
+        .sorted_by_key(|(x, y)| (x.0, x.1))
+        .enumerate()
+    {
+        println!("{}:", x + 1);
+        for (y, (neighbor, distance)) in distance
+            .iter()
+            .sorted_by_key(|(x, y)| (x.0, x.1))
+            .enumerate()
+        {
+            println!(" ->{}: {}, ", y + 1, distance);
         }
         println!();
     }
@@ -222,10 +231,7 @@ fn shortest_distances(pairs: &Vec<Pair>) -> HashMap<Pair, HashMap<Pair, Distance
                 distance,
                 std::cmp::min(*distance_node_to_neighbor, *distance_neighbor_to_node),
             );
-            distances
-                .get_mut(&node)
-                .unwrap()
-                .insert(*neighbor, min_distance);
+            distances.get_mut(&node).unwrap().remove(neighbor);
             distances
                 .get_mut(neighbor)
                 .unwrap()
@@ -236,11 +242,11 @@ fn shortest_distances(pairs: &Vec<Pair>) -> HashMap<Pair, HashMap<Pair, Distance
     return distances;
 }
 
-fn part1(distances: &HashMap<Pair, HashMap<Pair, Distance>>) -> i32 {
+fn part1(distances: &HashMap<Pair, HashMap<Pair, Distance>>) -> i64 {
     let sum = distances.iter().fold(0, |acc, (_node, neighbors)| {
         return acc
             + neighbors.iter().fold(0, |acc, (_neighbor, distance)| {
-                return acc + *distance as i32;
+                return acc + *distance as i64;
             });
     });
     return sum;
